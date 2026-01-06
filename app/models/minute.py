@@ -14,5 +14,5 @@ class Minute(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    # Taskとのリレーション（Phase 1-1ではコメントアウト可）
-    # tasks = relationship("Task", back_populates="minute", cascade="all, delete-orphan")
+    # Taskとのリレーション
+    tasks = relationship("Task", back_populates="minute", cascade="all, delete-orphan")
