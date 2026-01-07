@@ -7,6 +7,8 @@ from sqlalchemy import text
 from app.database import get_db
 from app.routers import minutes, tasks
 
+from app.routers.ai import router as ai_router
+
 app = FastAPI(
     title="AI Meeting Assistant API",
     description="議事録要約＆タスク抽出API",
@@ -25,6 +27,7 @@ app.add_middleware(
 # ルーター登録
 app.include_router(minutes.router)
 app.include_router(tasks.router)
+app.include_router(ai_router) 
 
 
 # === カスタム例外 ===
