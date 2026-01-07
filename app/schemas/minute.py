@@ -2,6 +2,8 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel
 
+from app.schemas.task import TaskResponse
+
 
 # 作成時のリクエスト
 class MinuteCreate(BaseModel):
@@ -24,6 +26,6 @@ class MinuteBase(BaseModel):
         from_attributes = True
 
 
-# レスポンス用（タスクあり） - 後で TaskResponse を作成後に更新
+# レスポンス用（タスクあり）
 class MinuteResponse(MinuteBase):
-    pass
+    tasks: List[TaskResponse] = []
