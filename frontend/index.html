@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI議事録生成＆タスク抽出ツール</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Marked.js (Markdown パーサー) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- カスタムスタイル -->
+    <link rel="stylesheet" href="style.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#6366F1',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app">
+        <!-- ヘッダー -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <h1 class="text-2xl font-bold text-gray-800">
+                    📝 AI議事録生成＆タスク抽出ツール
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    会議の議事録からAIが自動で要約とタスクを抽出します
+                </p>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-6">
+            <!-- エラーメッセージ -->
+            <div v-if="error" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="mr-2">⚠️</span>
+                    <span>{{ error }}</span>
+                </div>
+                <button @click="error = ''" class="text-red-500 hover:text-red-700">✕</button>
+            </div>
+
+            <!-- 成功メッセージ -->
+            <div v-if="successMessage" class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="mr-2">✅</span>
+                    <span>{{ successMessage }}</span>
+                </div>
+                <button @click="successMessage = ''" class="text-green-500 hover:text-green-700">✕</button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 左カラム: 議事録入力 & 一覧 -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- 議事録入力フォーム -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">📄</span>
+                            議事録入力
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    会議タイトル <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    v-model="minuteForm.title"
+                                    type="text"
+                                    placeholder="例: 2025年1月プロジェクト定例会"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+                                    :disabled="isLoading"
+                                >
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    会議日時 <span class="text-red-500">*</span>
+                                </label>
+                                <input 
+                                    v-model="minuteForm.meeting_date"
+                                    type="datetime-local"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+                                    :disabled="isLoading"
+                                >
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    議事録本文 <span class="text-red-500">*</span>
+                                </label>
+                                <textarea 
+                                    v-model="minuteForm.content"
+                                    rows="12"
+                                    placeholder="会議の内容を入力してください...&#10;&#10;【出席者】田中、佐藤、鈴木&#10;&#10;【議題】&#10;1. プロジェクトAの進捗確認&#10;&#10;【内容】&#10;田中より、プロジェクトAは予定通り進行中との報告..."
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition resize-none"
+                                    :disabled="isLoading"
+                                ></textarea>
+                            </div>
+                            
+                            <button 
+                                @click="analyzeMinute"
+                                :disabled="isLoading || !isFormValid"
+                                class="w-full bg-primary hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center"
+                            >
+                                <span v-if="isLoading" class="flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    分析中...
+                                </span>
+                                <span v-else>🤖 要約・タスク抽出を実行</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 議事録一覧 -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                                <span class="mr-2">📋</span>
+                                議事録一覧
+                            </h2>
+                            <button 
+                                @click="fetchMinutes"
+                                :disabled="isLoadingMinutes"
+                                class="text-sm text-primary hover:text-blue-700 flex items-center"
+                            >
+                                <svg v-if="isLoadingMinutes" class="animate-spin h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span v-else>🔄</span>
+                                更新
+                            </button>
+                        </div>
+                        
+                        <div v-if="minutes.length === 0" class="text-center py-8 text-gray-500">
+                            <p>議事録がありません</p>
+                            <p class="text-sm mt-1">上のフォームから議事録を登録してください</p>
+                        </div>
+                        
+                        <div v-else class="space-y-2 max-h-64 overflow-y-auto">
+                            <div 
+                                v-for="minute in minutes" 
+                                :key="minute.id"
+                                @click="selectMinute(minute)"
+                                class="p-3 border rounded-lg cursor-pointer transition hover:bg-gray-50"
+                                :class="{ 'border-primary bg-blue-50': selectedMinuteId === minute.id }"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="font-medium text-gray-800 truncate">{{ minute.title }}</h3>
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            {{ formatDate(minute.meeting_date) }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center ml-2 space-x-1">
+                                        <span v-if="minute.summary" class="text-green-500 text-xs" title="分析済み">✅</span>
+                                        <button 
+                                            @click.stop="deleteMinute(minute.id)"
+                                            class="text-red-400 hover:text-red-600 p-1"
+                                            title="削除"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右カラム: 結果表示 -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- 要約 -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">📊</span>
+                            要約
+                        </h2>
+                        
+                        <div v-if="!result.summary" class="text-center py-12 text-gray-400">
+                            <p class="text-4xl mb-3">🤖</p>
+                            <p>議事録を入力して「要約・タスク抽出を実行」をクリックしてください</p>
+                        </div>
+                        
+                        <div v-else class="prose prose-sm max-w-none">
+                            <div v-html="renderMarkdown(result.summary)" class="markdown-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- タスク一覧 -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center">
+                                <span class="mr-2">✅</span>
+                                抽出されたタスク
+                            </h2>
+                            <span v-if="result.tasks.length > 0" class="bg-primary text-white text-sm px-2 py-1 rounded-full">
+                                {{ result.tasks.length }}件
+                            </span>
+                        </div>
+                        
+                        <div v-if="result.tasks.length === 0" class="text-center py-12 text-gray-400">
+                            <p class="text-4xl mb-3">📝</p>
+                            <p>タスクが抽出されるとここに表示されます</p>
+                        </div>
+                        
+                        <div v-else class="space-y-3">
+                            <div 
+                                v-for="(task, index) in result.tasks" 
+                                :key="index"
+                                class="p-4 border border-gray-200 rounded-lg hover:border-primary transition"
+                            >
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <span class="bg-secondary text-white text-xs font-medium px-2 py-1 rounded mr-2">
+                                                {{ task.assignee }}
+                                            </span>
+                                            <span 
+                                                class="text-xs px-2 py-1 rounded"
+                                                :class="task.due_date && task.due_date !== '期限未定' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'"
+                                            >
+                                                📅 {{ task.due_date || '期限未定' }}
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-800">{{ task.content }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 元の議事録（選択時） -->
+                    <div v-if="selectedMinute && selectedMinute.content" class="bg-white rounded-lg shadow p-6">
+                        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">📄</span>
+                            議事録本文
+                        </h2>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <pre class="whitespace-pre-wrap text-sm text-gray-700 font-sans">{{ selectedMinute.content }}</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- フッター -->
+        <footer class="border-t bg-white mt-8">
+            <div class="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
+                AI Meeting Assistant - Powered by Gemini 2.5 Flash
+            </div>
+        </footer>
+    </div>
+
+    <!-- Vue.js アプリケーション -->
+    <script src="app.js"></script>
+</body>
+</html>

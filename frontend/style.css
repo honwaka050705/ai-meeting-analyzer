@@ -1,0 +1,160 @@
+/**
+ * AI議事録生成＆タスク抽出ツール - カスタムスタイル
+ */
+
+/* Markdown コンテンツのスタイル */
+.markdown-content h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.markdown-content h2:first-child {
+    margin-top: 0;
+}
+
+.markdown-content h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.markdown-content ul {
+    list-style-type: disc;
+    margin-left: 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.markdown-content li {
+    margin-bottom: 0.25rem;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.markdown-content p {
+    margin-bottom: 0.75rem;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.markdown-content strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* スクロールバーのカスタマイズ */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ローディングアニメーション */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* フォーカス時のスタイル強化 */
+input:focus,
+textarea:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* カード hover エフェクト */
+.hover\:border-primary:hover {
+    border-color: #3B82F6;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+/* 選択状態のカード */
+.border-primary.bg-blue-50 {
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+/* ボタンのホバーエフェクト */
+button:not(:disabled):hover {
+    transform: translateY(-1px);
+}
+
+button:not(:disabled):active {
+    transform: translateY(0);
+}
+
+/* トランジション */
+button,
+input,
+textarea,
+.transition {
+    transition: all 0.2s ease;
+}
+
+/* レスポンシブ調整 */
+@media (max-width: 1024px) {
+    .markdown-content h2 {
+        font-size: 1rem;
+    }
+}
+
+/* プレースホルダーのスタイル */
+::placeholder {
+    color: #9ca3af;
+    opacity: 1;
+}
+
+/* 無効化状態のスタイル */
+input:disabled,
+textarea:disabled,
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* タスクカードのホバー */
+.task-card:hover {
+    background-color: #f8fafc;
+}
+
+/* アニメーション付きのエラー/成功メッセージ */
+.bg-red-50,
+.bg-green-50 {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
