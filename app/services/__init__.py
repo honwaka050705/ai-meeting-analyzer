@@ -22,3 +22,13 @@ from app.services.ai_service import (
     AIResponseParseError,
     AIRateLimitError,
 )
+from app.services.embedding_service import (
+    generate_embedding,
+    generate_query_embedding,
+    test_embedding_connection,
+)
+from app.services.search_service import (
+    update_minute_embedding,
+    search_similar_minutes,
+    update_all_embeddings,
+)

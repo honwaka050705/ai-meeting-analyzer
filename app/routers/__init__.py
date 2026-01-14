@@ -1,1 +1,1 @@
-from app.routers import minutes, tasks, ai
+from app.routers import minutes, tasks, ai, search

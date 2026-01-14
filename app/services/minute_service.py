@@ -3,6 +3,7 @@ from app.models.minute import Minute
 from app.schemas.minute import MinuteCreate
 from datetime import datetime
 from app.models.task import Task
+from app.services.search_service import update_minute_embedding
 
 
 def create_minute(db: Session, minute_data: MinuteCreate) -> Minute:
@@ -96,7 +97,12 @@ def analyze_and_save(db: Session, minute_id: int) -> dict:
     delete_tasks_by_minute(db, minute_id)
     update_summary(db, minute_id, result["summary"])
     create_tasks_from_ai(db, minute_id, result["tasks"])
-    
+
+    # embeddingを生成（失敗しても分析結果は返す）
+    try:
+        update_minute_embedding(db, minute_id)
+    except Exception as e:
+        print(f"Warning: Embedding生成に失敗しました (ID={minute_id}): {e}")    
     return {
         "minute_id": minute_id,
         "summary": result["summary"],
