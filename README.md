@@ -212,6 +212,10 @@ curl -X POST http://localhost:8000/api/v1/minutes/1/analyze
 - **Gemini API**: プロンプトエンジニアリングによる高精度な抽出
 - **Docker Compose**: 開発環境の簡単構築
 
+---
+## エビデンス
+- [Phase 3-1: ベクトル検索機能](https://helpful-thumb-fea.notion.site/Phase-3-1-2e8d7527ef1880d1a3a2d31621274449?source=copy_link)
+---
 
 ## 📄 ライセンス
 
